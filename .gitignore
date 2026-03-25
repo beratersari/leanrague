@@ -1,0 +1,30 @@
+# Add your gitignore content here
+*~
+*.pyc
+__pycache__/
+.DS_Store
+# PyCharm ile ilgili dosya ve klasörler
+.idea/
+**/.idea/
+language_learning.db
+# Çalışma alanı dosyasını hariç tut
+*.iml
+*.iws
+*.ipr
+
+# Python tarafından derlenmiş / optimize edilmiş veya DLL dosyaları
+__pycache__/
+**/__pycache__/
+**/__pycache__
+*.py[cod]
+
+# C uzantıları
+*.so
+
+# Dağıtım / paketleme için oluşturulan dosyalar
+.Python
+build/
+dist/
+*.egg-info/
+logs/
+log/
