@@ -174,3 +174,77 @@ SWAGGER_SETTINGS = {
 REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL = 'INFO'
+
+# Log file path (relative to BASE_DIR)
+LOG_FILE = BASE_DIR / 'logs' / 'app.log'
+
+# Enable/disable console output
+LOG_CONSOLE_OUTPUT = True
+
+# Enable/disable file output
+LOG_FILE_OUTPUT = False
+
+# Log format
+LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
+
+# Date format for timestamps
+LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+# Max log file size (bytes) before rotation
+LOG_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+# Number of backup files to keep
+LOG_BACKUP_COUNT = 5
+
+# Django's built-in logging configuration (optional, can be extended)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '[%(levelname)s] %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+            'level': LOG_LEVEL,
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_FILE),
+            'maxBytes': LOG_MAX_FILE_SIZE,
+            'backupCount': LOG_BACKUP_COUNT,
+            'formatter': 'verbose',
+            'level': LOG_LEVEL,
+        },
+    },
+    'loggers': {
+        'lang_learn': {
+            'handlers': ['console'] + (['file'] if LOG_FILE_OUTPUT else []),
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'app': {
+            'handlers': ['console'] + (['file'] if LOG_FILE_OUTPUT else []),
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}

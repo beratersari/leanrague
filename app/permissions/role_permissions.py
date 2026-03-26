@@ -3,6 +3,10 @@ Permissions - Role-based access control for n-layered architecture.
 """
 
 from rest_framework.permissions import BasePermission
+from app.core.logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class IsAdmin(BasePermission):
@@ -13,8 +17,12 @@ class IsAdmin(BasePermission):
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
+            logger.debug("IsAdmin: User not authenticated")
             return False
-        return request.user.is_admin
+        is_admin = request.user.is_admin
+        if not is_admin:
+            logger.debug(f"IsAdmin: User {request.user.id} denied (not admin)")
+        return is_admin
 
     def has_object_permission(self, request, view, obj):
         return self.has_permission(request, view)
@@ -28,8 +36,12 @@ class IsContentCreator(BasePermission):
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
+            logger.debug("IsContentCreator: User not authenticated")
             return False
-        return request.user.is_content_creator
+        is_creator = request.user.is_content_creator
+        if not is_creator:
+            logger.debug(f"IsContentCreator: User {request.user.id} denied (not content creator)")
+        return is_creator
 
     def has_object_permission(self, request, view, obj):
         return self.has_permission(request, view)

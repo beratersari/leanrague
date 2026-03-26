@@ -12,6 +12,7 @@ from rest_framework.permissions import AllowAny
 
 # Import from new layer-based structure
 from app.api.views.user_views import (
+    FollowUserView, UnfollowUserView, UserFollowersView, UserFollowingView,
     CustomTokenObtainPairView,
     UserRegistrationView,
     UserProfileView,
@@ -31,11 +32,16 @@ from app.api.views.subscription_views import (
     AdminSubscriptionStatsView,
 )
 from app.api.views.content_views import (
+    CreatorFieldListView, CreatorFieldDetailView, CreatorFieldCreateView, CreatorFieldPurchaseView,
+    MyCreatorFieldsView, MyPurchasedFieldsView,
     TopicListView, TopicDetailView,
     FlashcardSetListView, FlashcardSetDetailView, FlashcardListView, FlashcardDetailView, FlashcardRandomView,
     MCQSetListView, MCQSetDetailView, MCQListView, MCQDetailView, MCQQuizView, MCQCheckAnswerView, MCQRandomView,
     PracticeFlashcardsView, PracticeMCQsView, PracticeMixedView,
     PracticeSubmitFlashcardView, PracticeSubmitMCQView,
+    LeaderboardView,
+    UserGamificationView,
+    UserBadgesView,
 )
 
 
@@ -113,6 +119,10 @@ urlpatterns = [
     path('api/users/', UserListView.as_view(), name='user_list'),
     path('api/users/stats/', UserStatsView.as_view(), name='user_stats'),
     path('api/users/<int:user_id>/', UserDetailView.as_view(), name='user_detail'),
+    path('api/users/<int:user_id>/follow/', FollowUserView.as_view(), name='follow_user'),
+    path('api/users/<int:user_id>/unfollow/', UnfollowUserView.as_view(), name='unfollow_user'),
+    path('api/users/<int:user_id>/followers/', UserFollowersView.as_view(), name='user_followers'),
+    path('api/users/<int:user_id>/following/', UserFollowingView.as_view(), name='user_following'),
     path('api/users/<int:user_id>/role/<str:action>/', UserRoleManagementView.as_view(), name='user_role_management'),
 
     # Subscriptions
@@ -156,4 +166,20 @@ urlpatterns = [
     path('api/practice/mcqs/', PracticeMCQsView.as_view(), name='practice_mcqs'),
     path('api/practice/submit/flashcard/', PracticeSubmitFlashcardView.as_view(), name='practice_submit_flashcard'),
     path('api/practice/submit/mcq/', PracticeSubmitMCQView.as_view(), name='practice_submit_mcq'),
+
+    # Leaderboard
+    path('api/leaderboard/', LeaderboardView.as_view(), name='leaderboard'),
+
+    # Gamification (XP, Level, Badges) - computed/derived, no storage
+    path('api/gamification/', UserGamificationView.as_view(), name='gamification'),
+    path('api/gamification/badges/', UserBadgesView.as_view(), name='gamification_badges'),
+
+    # Creator Fields
+    path('api/creator-fields/', CreatorFieldListView.as_view(), name='creator_field_list'),
+    path('api/creator-fields/my/', MyCreatorFieldsView.as_view(), name='my_creator_fields'),
+    path('api/creator-fields/purchased/', MyPurchasedFieldsView.as_view(), name='my_purchased_fields'),
+    path('api/creator-fields/<int:field_id>/', CreatorFieldDetailView.as_view(), name='creator_field_detail'),
+    path('api/creator-fields/create/', CreatorFieldCreateView.as_view(), name='creator_field_create'),
+    path('api/creator-fields/<int:field_id>/purchase/', CreatorFieldPurchaseView.as_view(), name='creator_field_purchase'),
+
 ]

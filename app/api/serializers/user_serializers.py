@@ -50,6 +50,8 @@ class UserSerializer(serializers.ModelSerializer):
     """Serializer for user data (read)."""
     role_display = serializers.CharField(source='get_role_display', read_only=True)
     full_name = serializers.CharField(read_only=True)
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -57,9 +59,17 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name', 'full_name',
             'role', 'role_display', 'phone_number', 'profile_image',
             'is_verified', 'is_active', 'created_at', 'updated_at',
-            'last_login_at'
+            'last_login_at', 'followers_count', 'following_count'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'last_login_at']
+
+    def get_followers_count(self, obj):
+        from app.models.models import UserFollow
+        return UserFollow.objects.filter(following=obj).count()
+
+    def get_following_count(self, obj):
+        from app.models.models import UserFollow
+        return UserFollow.objects.filter(follower=obj).count()
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

@@ -174,6 +174,14 @@ class FlashcardSet(TimeStampedModel):
     A topic can have multiple flashcard sets.
     """
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='flashcard_sets')
+    creator_field = models.ForeignKey(
+        'CreatorField',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='flashcard_sets',
+        help_text="If set, this set is part of a creator's paid field"
+    )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True, db_index=True)
@@ -222,6 +230,14 @@ class MCQSet(TimeStampedModel):
     A topic can have multiple MCQ sets.
     """
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='mcq_sets')
+    creator_field = models.ForeignKey(
+        'CreatorField',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='mcq_sets',
+        help_text="If set, this set is part of a creator's paid field"
+    )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True, db_index=True)
@@ -436,3 +452,112 @@ class UserMCQProgress(TimeStampedModel):
         if not self.next_review_date:
             return True
         return self.next_review_date <= timezone.now().date()
+
+
+# =============================================================================
+# CREATOR FIELDS - Content Creator's Paid Content Packages
+# =============================================================================
+
+class CreatorField(TimeStampedModel):
+    """
+    CreatorField - A content creator's own content package.
+    Creators can bundle their FlashcardSets and MCQSets into a Field and sell it.
+    Users must purchase each field separately (even if they have premium subscription).
+    """
+    creator = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='creator_fields',
+        limit_choices_to={'role': 'content_creator'},
+        help_text="The content creator who owns this field"
+    )
+    name = models.CharField(max_length=200, help_text="Name of the field/course")
+    description = models.TextField(blank=True, help_text="Description shown to users before purchase")
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        help_text="Price in USD. Set to 0 for free (but still requires purchase to access)."
+    )
+    is_active = models.BooleanField(default=True, db_index=True, help_text="If inactive, not visible to users")
+
+    class Meta:
+        db_table = 'content_creator_field'
+        verbose_name = 'Creator Field'
+        verbose_name_plural = 'Creator Fields'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.creator.email} - {self.name} (${self.price})"
+
+    def get_flashcard_set_count(self):
+        """Count of flashcard sets in this field."""
+        return self.flashcard_sets.count()
+
+    def get_mcq_set_count(self):
+        """Count of MCQ sets in this field."""
+        return self.mcq_sets.count()
+
+    def is_purchased_by(self, user):
+        """Check if a user has purchased this field."""
+        return CreatorFieldPurchase.objects.filter(user=user, creator_field=self).exists()
+
+
+class CreatorFieldPurchase(TimeStampedModel):
+    """
+    CreatorFieldPurchase - Tracks user purchases of creator fields.
+    Each user must purchase each field separately.
+    """
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='field_purchases')
+    creator_field = models.ForeignKey(CreatorField, on_delete=models.CASCADE, related_name='purchases')
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    purchased_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'content_creator_field_purchase'
+        verbose_name = 'Creator Field Purchase'
+        verbose_name_plural = 'Creator Field Purchases'
+        unique_together = ('user', 'creator_field')
+        ordering = ['-purchased_at']
+
+    def __str__(self):
+        return f"{self.user.email} purchased {self.creator_field.name}"
+
+
+# =============================================================================
+# USER FOLLOWS - Social Following System
+# =============================================================================
+
+class UserFollow(TimeStampedModel):
+    """
+    UserFollow - Tracks user following relationships.
+    A user (follower) can follow another user (following).
+    """
+    follower = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='following',  # user.following.all() -> users this user follows
+        help_text="The user who is following"
+    )
+    following = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='followers',  # user.followers.all() -> users following this user
+        help_text="The user being followed"
+    )
+
+    class Meta:
+        db_table = 'users_user_follow'
+        verbose_name = 'User Follow'
+        verbose_name_plural = 'User Follows'
+        unique_together = ('follower', 'following')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.follower.email} follows {self.following.email}"
+
+    def clean(self):
+        """Prevent self-following."""
+        if self.follower_id == self.following_id:
+            from django.core.exceptions import ValidationError
+            raise ValidationError("A user cannot follow themselves.")
